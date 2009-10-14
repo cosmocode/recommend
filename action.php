@@ -51,6 +51,7 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
     }
 
     function _handle_post() {
+        /* Validate input. */
         if(!isset($_POST['r_email']) || !mail_isvalid($_POST['r_email'])) {
             msg('Invalid email address submitted', -1);
             return false;
@@ -71,6 +72,7 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
 
         $comment = isset($_POST['comment']) ? $_POST['comment'] : null;
 
+        /* Prepare mail text. */
         $mailtext = file_get_contents(dirname(__FILE__).'/template.txt');
 
         global $conf;
@@ -83,12 +85,24 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
                       'AUTHOR' => $USERINFO['name']) as $var => $val) {
             $mailtext = str_replace('@' . $var . '@', $val, $mailtext);
         }
+        /* Limit to two empty lines. */
         $mailtext = preg_replace('/\n{4,}/', "\n\n\n", $mailtext);
 
+        /* Perform stuff. */
         mail_send($email, 'Page recommendation', $mailtext);
-
+        $this->_log($USERINFO['mail'], $email);
         echo 'Thanks for recommending our site.';
         return true;
     }
 
+    function _log($sender, $receiver) {
+        global $ID;
+        $path = DOKU_INC.'data/cache/recommend';
+        if (!file_exists($path)) {
+            mkdir($path);
+        }
+        file_put_contents($path . '/' . date('Y-m') . '.log', date('r') . ': ' .
+                          "“${sender}” recommended “${ID}” to “${receiver}”.",
+                          FILE_APPEND);
+    }
 }
