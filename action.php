@@ -70,6 +70,7 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
                           '<textarea name="comment" rows="3" cols="10" ' .
                           'class="edit">' . $comment . '</textarea></label>');
         $form->addElement(form_makeButton('submit', '', 'Send recommendation'));
+        $form->addElement(form_makeButton('submit', 'cancel', 'Cancel'));
         $form->printForm();
     }
 

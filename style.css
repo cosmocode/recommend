@@ -1,3 +1,16 @@
+#recommend_box {
+    left: 25%;
+    top:25%;
+    width: 50%;
+    position: fixed;
+    padding: 1.5em 0;
+    z-index: 1;
+}
+
+#recommend_box fieldset {
+    background: white;
+}
+
 div.dokuwiki div.recommend_plugin {
     width: 50%;
     text-align: center;
@@ -16,7 +29,7 @@ div.dokuwiki form#recommend_plugin p {
 }
 
 div.dokuwiki form#recommend_plugin fieldset {
-    width: 80%;
+    width: 90%;
 }
 
 div.dokuwiki form#recommend_plugin label {

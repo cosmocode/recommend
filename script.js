@@ -41,6 +41,9 @@ function recommend_box(content) {
     if (!div) {
         div = document.createElement('div');
         div.id = 'recommend_box';
+    } else if (content === '') {
+        div.parentNode.removeChild(div);
+        return;
     }
     div.innerHTML = content;
     getElementsByClass('stylehead', document, 'div')[0].appendChild(div);
@@ -53,8 +56,7 @@ function recommend_handle() {
         return;
     }
     if (this.responseStatus[0] === 204) {
-        var div = $('recommend_box');
-        div.parentNode.removeChild(div);
+        recommend_box('');
         return;
     }
 
@@ -62,6 +64,9 @@ function recommend_handle() {
     box.getElementsByTagName('label')[0].focus();
     change_form_handler(box.getElementsByTagName('form'),
                         function (form) {return sack_form(form, recommend_handle); });
+
+    var inputs = box.getElementsByTagName('input');
+    inputs[inputs.length - 1].onclick = function() {recommend_box(''); return false;};
 }
 
 addInitEvent(function () {
