@@ -1,6 +1,7 @@
 <?php
 require_once DOKU_PLUGIN . 'action.php';
 require_once DOKU_INC . 'inc/form.php';
+require_once dirname(__FILE__) . '/log.php';
 
 class action_plugin_recommend extends DokuWiki_Action_Plugin {
     function getInfo(){
@@ -111,18 +112,8 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
 
         /* Perform stuff. */
         mail_send($email, 'Page recommendation', $mailtext);
-        $this->_log($USERINFO['mail'], $email);
+        $log = new Plugin_Recommend_Log(date('Y-m'));
+        $log->writeEntry($page, $USERINFO['mail'], $email);
         return false;
-    }
-
-    function _log($sender, $receiver) {
-        global $ID;
-        $path = DOKU_INC.'data/cache/recommend';
-        if (!file_exists($path)) {
-            mkdir($path);
-        }
-        file_put_contents($path . '/' . date('Y-m') . '.log', date('r') . ': ' .
-                          "“${sender}” recommended “${ID}” to “${receiver}”.",
-                          FILE_APPEND);
     }
 }
