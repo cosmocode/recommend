@@ -16,8 +16,7 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
     }
 
     function _handle(&$event, $param) {
-        if (!in_array($event->data, array('recommend', 'plugin_recommend')) ||
-            !isset($_SERVER['REMOTE_USER'])) {
+        if (!in_array($event->data, array('recommend', 'plugin_recommend'))) {
             return;
         }
 
@@ -49,8 +48,10 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
     }
 
     function _show_form() {
-        $name    = isset($_REQUEST['r_name']) ? $_REQUEST['r_name'] : '';
-        $mail    = isset($_REQUEST['r_email']) ? $_REQUEST['r_email'] : '';
+        $r_name  = isset($_REQUEST['r_name']) ? $_REQUEST['r_name'] : '';
+        $r_email = isset($_REQUEST['r_email']) ? $_REQUEST['r_email'] : '';
+        $s_name  = isset($_REQUEST['s_name']) ? $_REQUEST['s_name'] : '';
+        $s_email = isset($_REQUEST['s_email']) ? $_REQUEST['s_email'] : '';
         $comment = isset($_REQUEST['comment']) ? $_REQUEST['r_comment'] : '';
         if (isset($_REQUEST['id'])) {
             $id  = $_REQUEST['id'];
@@ -65,23 +66,49 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
         $form = new Doku_Form('recommend_plugin', '?do=recommend');
         $form->addHidden('id', $id);
         $form->startFieldset('Recommend page “' . hsc($id). '”');
-        $form->addElement(form_makeTextField('r_name', $name, 'Recipient name'));
-        $form->addElement(form_makeTextField('r_email', $mail,
+        if (isset($_SERVER['REMOTE_USER'])) {
+            global $USERINFO;
+            $form->addHidden('s_name', $USERINFO['name']);
+            $form->addHidden('s_email', $USERINFO['mail']);
+        } else {
+            $form->addElement(form_makeTextField('s_name', $s_name, 'Your name'));
+            $form->addElement(form_makeTextField('s_email', $s_email,
+                                                 'Your email address'));
+        }
+        $form->addElement(form_makeTextField('r_name', $r_name, 'Recipient name'));
+        $form->addElement(form_makeTextField('r_email', $r_email,
                                              'Recipient email address'));
         $form->addElement('<label><span>'.hsc('Additional comment').'</span>'.
                           '<textarea name="comment" rows="3" cols="10" ' .
                           'class="edit">' . $comment . '</textarea></label>');
+        $helper = null;
+        if(@is_dir(DOKU_PLUGIN.'captcha')) $helper = plugin_load('helper','captcha');
+        if(!is_null($helper) && $helper->isEnabled()){
+            $form->addElement($helper->getHTML());
+        }
+
         $form->addElement(form_makeButton('submit', '', 'Send recommendation'));
         $form->addElement(form_makeButton('submit', 'cancel', 'Cancel'));
         $form->printForm();
     }
 
     function _handle_post() {
+        $helper = null;
+        if(@is_dir(DOKU_PLUGIN.'captcha')) $helper = plugin_load('helper','captcha');
+        if(!is_null($helper) && $helper->isEnabled() && !$helper->check()) {
+            return 'Wrong captcha';
+        }
+
         /* Validate input. */
         if (!isset($_POST['r_email']) || !mail_isvalid($_POST['r_email'])) {
-            return 'Invalid email address submitted';
+            return 'Invalid recipient email address submitted';
         }
-        $email = $_POST['r_email'];
+        $r_email = $_POST['r_email'];
+
+        if (!isset($_POST['s_email']) || !mail_isvalid($_POST['s_email'])) {
+            return 'Invalid sender email address submitted';
+        }
+        $s_email = $_POST['s_email'];
 
         if (!isset($_POST['id']) || !page_exists($_POST['id'])) {
             return 'Invalid page submitted';
@@ -89,9 +116,14 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
         $page = $_POST['id'];
 
         if (!isset($_POST['r_name']) || trim($_POST['r_name']) === '') {
-            return 'Invalid name submitted';
+            return 'Invalid recipient name submitted';
         }
-        $name = $_POST['r_name'];
+        $r_name = $_POST['r_name'];
+
+        if (!isset($_POST['s_name']) || trim($_POST['s_name']) === '') {
+            return 'Invalid sender name submitted';
+        }
+        $s_name = $_POST['s_name'];
 
         $comment = isset($_POST['comment']) ? $_POST['comment'] : null;
 
@@ -100,21 +132,21 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
 
         global $conf;
         global $USERINFO;
-        foreach (array('NAME' => $name,
+        foreach (array('NAME' => $r_name,
                        'PAGE' => $page,
                        'SITE' => $conf['title'],
                        'URL'  => wl($page, '', true),
                        'COMMENT' => $comment,
-                       'AUTHOR' => $USERINFO['name']) as $var => $val) {
+                       'AUTHOR' => "$s_name <$s_email>") as $var => $val) {
             $mailtext = str_replace('@' . $var . '@', $val, $mailtext);
         }
         /* Limit to two empty lines. */
         $mailtext = preg_replace('/\n{4,}/', "\n\n\n", $mailtext);
 
         /* Perform stuff. */
-        mail_send($email, 'Page recommendation', $mailtext);
+        mail_send($r_email, 'Page recommendation', $mailtext);
         $log = new Plugin_Recommend_Log(date('Y-m'));
-        $log->writeEntry($page, $USERINFO['mail'], $email);
+        $log->writeEntry($page, "$s_name <$s_email>", "$r_name <$r_email>");
         return false;
     }
 }

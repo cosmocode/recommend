@@ -1,5 +1,6 @@
 author  Adrian Lang
-email   lang@cosmocode.de
-date    2009-10-14
+email   dokuwiki@cosmocode.de
+date    2009-10-21
 name    recommend 
-desc    Allows logged-in users to recommend a page via email
+desc    Allows to recommend a page via email
+url     http://www.dokuwiki.org/plugin:recommend
