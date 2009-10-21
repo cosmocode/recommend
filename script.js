@@ -46,7 +46,7 @@ function recommend_box(content) {
         return;
     }
     div.innerHTML = content;
-    getElementsByClass('stylehead', document, 'div')[0].appendChild(div);
+    document.body.appendChild(div);
     return div;
 }
 
@@ -56,15 +56,14 @@ function recommend_handle() {
         return;
     }
     if (this.responseStatus[0] === 204) {
-        recommend_box('');
-        return;
+        var box = recommend_box('<form id="recommend_plugin" accept-charset="utf-8" method="post" action="?do=recommend"><div class="no"><fieldset><legend>Finished</legend<p>Thanks for recommending our site.</p><input type="submit" class="button" value="Cancel" name="do[cancel]"/></fieldset></div></form>');
+    } else {
+
+        var box = recommend_box(this.response);
+        box.getElementsByTagName('label')[0].focus();
+        change_form_handler(box.getElementsByTagName('form'),
+                            function (form) {return sack_form(form, recommend_handle); });
     }
-
-    var box = recommend_box(this.response);
-    box.getElementsByTagName('label')[0].focus();
-    change_form_handler(box.getElementsByTagName('form'),
-                        function (form) {return sack_form(form, recommend_handle); });
-
     var inputs = box.getElementsByTagName('input');
     inputs[inputs.length - 1].onclick = function() {recommend_box(''); return false;};
 }

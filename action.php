@@ -8,14 +8,14 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
         return confToHash(dirname(__FILE__).'/INFO.txt');
     }
 
-    function register($controller) {
+    function register(&$controller) {
         foreach (array('ACTION_ACT_PREPROCESS', 'AJAX_CALL_UNKNOWN',
                        'TPL_ACT_UNKNOWN') as $event) {
             $controller->register_hook($event, 'BEFORE', $this, '_handle');
         }
     }
 
-    function _handle($event, $param) {
+    function _handle(&$event, $param) {
         if (!in_array($event->data, array('recommend', 'plugin_recommend')) ||
             !isset($_SERVER['REMOTE_USER'])) {
             return;
@@ -57,7 +57,8 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
         } else {
             global $ID;
             if (!isset($ID)) {
-                throw new Exception('Unknown page');
+                msg('Unknown page', -1);
+                return;
             }
             $id  = $ID;
         }

@@ -1,0 +1,7 @@
+<?php
+if(isset($_SERVER['REMOTE_USER'])) {
+    global $lang;
+    $lang['btn_recommend'] = 'Recommend';
+    echo html_btn('recommend',$ID,null,array('do' => 'recommend', 'id' => $ID));
+}
+?>

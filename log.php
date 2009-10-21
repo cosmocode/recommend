@@ -19,9 +19,10 @@ class Plugin_Recommend_Log {
     }
 
     function writeEntry($page, $sender, $receiver) {
-        file_put_contents($this->path, date('r') . ': ' .
-                          "“${sender}” recommended “${page}” to “${receiver}”.\n",
-                          FILE_APPEND);
+	$logfile = fopen($this->path, 'a');
+        fwrite($logfile, date('r') . ': ' .
+                         "“${sender}” recommended “${page}” to “${receiver}”.\n");
+	fclose($logfile);
     }
 }
 

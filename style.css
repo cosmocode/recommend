@@ -11,47 +11,47 @@
     background: white;
 }
 
-div.dokuwiki div.recommend_plugin {
+div.recommend_plugin {
     width: 50%;
     text-align: center;
     font-size: 120%;
     padding: 2em;
 }
 
-div.dokuwiki form#recommend_plugin {
+form#recommend_plugin {
     width: 100%;
     text-align: center;
 }
 
-div.dokuwiki form#recommend_plugin p {
+form#recommend_plugin p {
     font-size: 90%;
     text-align: left;
 }
 
-div.dokuwiki form#recommend_plugin fieldset {
+form#recommend_plugin fieldset {
     width: 90%;
 }
 
-div.dokuwiki form#recommend_plugin label {
+form#recommend_plugin label {
     display: block;
     overflow: auto;
     margin: 5px;
 }
 
-div.dokuwiki form#recommend_plugin label span {
+form#recommend_plugin label span {
     width: 48%;
     text-align: right;
     display: block;
     float: left;
 }
 
-div.dokuwiki form#recommend_plugin label input {
+form#recommend_plugin label input {
     float: left;
     margin-left: 5px;
 }
 
-div.dokuwiki form#recommend_plugin label textarea.edit,
-div.dokuwiki form#recommend_plugin label input.edit {
+form#recommend_plugin label textarea.edit,
+form#recommend_plugin label input.edit {
     width: 48%;
     display: block;
     float: left;
