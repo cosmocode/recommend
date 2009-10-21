@@ -103,27 +103,25 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
         if (!isset($_POST['r_email']) || !mail_isvalid($_POST['r_email'])) {
             return 'Invalid recipient email address submitted';
         }
-        $r_email = $_POST['r_email'];
+        if (!isset($_POST['r_name']) || trim($_POST['r_name']) === '') {
+            return 'Invalid recipient name submitted';
+        }
+        $r_name    = $_POST['r_name'];
+        $recipient = $r_name . ' <' . $_POST['r_email'] . '>';
 
         if (!isset($_POST['s_email']) || !mail_isvalid($_POST['s_email'])) {
             return 'Invalid sender email address submitted';
         }
-        $s_email = $_POST['s_email'];
+        if (!isset($_POST['s_name']) || trim($_POST['s_name']) === '') {
+            return 'Invalid sender name submitted';
+        }
+        $s_name = $_POST['s_name'];
+        $sender = $s_name . ' <' . $_POST['s_email'] . '>';
 
         if (!isset($_POST['id']) || !page_exists($_POST['id'])) {
             return 'Invalid page submitted';
         }
         $page = $_POST['id'];
-
-        if (!isset($_POST['r_name']) || trim($_POST['r_name']) === '') {
-            return 'Invalid recipient name submitted';
-        }
-        $r_name = $_POST['r_name'];
-
-        if (!isset($_POST['s_name']) || trim($_POST['s_name']) === '') {
-            return 'Invalid sender name submitted';
-        }
-        $s_name = $_POST['s_name'];
 
         $comment = isset($_POST['comment']) ? $_POST['comment'] : null;
 
@@ -137,16 +135,16 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
                        'SITE' => $conf['title'],
                        'URL'  => wl($page, '', true),
                        'COMMENT' => $comment,
-                       'AUTHOR' => "$s_name <$s_email>") as $var => $val) {
+                       'AUTHOR' => $s_name) as $var => $val) {
             $mailtext = str_replace('@' . $var . '@', $val, $mailtext);
         }
         /* Limit to two empty lines. */
         $mailtext = preg_replace('/\n{4,}/', "\n\n\n", $mailtext);
 
         /* Perform stuff. */
-        mail_send($r_email, 'Page recommendation', $mailtext);
+        mail_send($recipient, 'Page recommendation', $mailtext, $sender);
         $log = new Plugin_Recommend_Log(date('Y-m'));
-        $log->writeEntry($page, "$s_name <$s_email>", "$r_name <$r_email>");
+        $log->writeEntry($page, $sender, $recipient, $comment);
         return false;
     }
 }

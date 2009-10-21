@@ -1,4 +1,5 @@
 <?php
+/* Remove the if clause to display the button to anonymous users as well. */
 if(isset($_SERVER['REMOTE_USER'])) {
     global $lang;
     $lang['btn_recommend'] = 'Recommend';
