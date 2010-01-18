@@ -4,7 +4,7 @@ require_once dirname(__FILE__) . '/log.php';
 
 class admin_plugin_recommend extends DokuWiki_Admin_Plugin {
     function getInfo(){
-        return confToHash(dirname(__FILE__).'/INFO.txt');
+        return confToHash(dirname(__FILE__).'/plugin.info.txt');
     }
 
     function getMenuText() {

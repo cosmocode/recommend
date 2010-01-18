@@ -1,3 +1,4 @@
+base    recommend
 author  Adrian Lang
 email   dokuwiki@cosmocode.de
 date    2009-10-21
