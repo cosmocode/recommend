@@ -1,3 +1,5 @@
+(function () {
+
 /* Lib */
 
 var recommend_ajax_call = 'plugin_recommend';
@@ -72,3 +74,5 @@ addInitEvent(function () {
                 change_form_handler(getElementsByClass('btn_recommend', document, 'form'),
                                     function (form) {return sack_form(form, recommend_handle); });
              });
+
+}());
