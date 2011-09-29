@@ -39,7 +39,7 @@ class admin_plugin_recommend extends DokuWiki_Admin_Plugin {
         echo '<p>In ' . $this->month . ', your users made the following ' . count($this->entries) . ' recommendations:</p>';
         echo '<ul>';
         foreach(array_reverse($this->entries) as $entry) {
-            echo "<li>$entry</li>";
+            echo "<li>" . hsc($entry) . "</li>";
         }
         echo '</ul>';
     }
