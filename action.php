@@ -36,7 +36,7 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
                 header('HTTP/1.1 204 No Content');
                 return;
             }
-	    $thanks_msg=$this->getLang('thanks_msg');
+            $thanks_msg=$this->getLang('thanks_msg');
             echo $thanks_msg;
             return;
         }
@@ -49,15 +49,14 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
     }
 
     function _show_form() {
-	$site_label=$this->getLang('site');
-	$r_name_label=$this->getLang('recipient_name');
-	$r_email_label=$this->getLang('recipient_mail');
-	$s_name_label=$this->getLang('sender_name');
-	$s_email_label=$this->getLang('sender_mail');
-	$comment_label=$this->getLang('comment');
-	$send_btn_label=$this->getLang('send_btn');
-	$cancel_btn_label=$this->getLang('cancel_btn'); 
-
+        $site_label=$this->getLang('site');
+        $r_name_label=$this->getLang('recipient_name');
+        $r_email_label=$this->getLang('recipient_mail');
+        $s_name_label=$this->getLang('sender_name');
+        $s_email_label=$this->getLang('sender_mail');
+        $comment_label=$this->getLang('comment');
+        $send_btn_label=$this->getLang('send_btn');
+        $cancel_btn_label=$this->getLang('cancel_btn'); 
         $r_name  = isset($_REQUEST['r_name']) ? $_REQUEST['r_name'] : '';
         $r_email = isset($_REQUEST['r_email']) ? $_REQUEST['r_email'] : '';
         $s_name  = isset($_REQUEST['s_name']) ? $_REQUEST['s_name'] : '';
@@ -102,7 +101,7 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
 
     function _handle_post() {
         $helper = null;
-	$captcha_errmsg=$this->getLang('captcha_errmsg');
+        $captcha_errmsg=$this->getLang('captcha_errmsg');
         if(@is_dir(DOKU_PLUGIN.'captcha')) $helper = plugin_load('helper','captcha');
         if(!is_null($helper) && $helper->isEnabled() && !$helper->check()) {
             return $captcha_errmsg;
