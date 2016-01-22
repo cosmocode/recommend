@@ -8,7 +8,7 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
         return confToHash(dirname(__FILE__).'/plugin.info.txt');
     }
 
-    function register(&$controller) {
+    function register(Doku_Event_Handler $controller) {
         foreach (array('ACTION_ACT_PREPROCESS', 'AJAX_CALL_UNKNOWN',
                        'TPL_ACT_UNKNOWN') as $event) {
             $controller->register_hook($event, 'BEFORE', $this, '_handle');
