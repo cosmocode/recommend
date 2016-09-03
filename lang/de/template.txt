@@ -1,0 +1,9 @@
+Hallo @NAME@,
+
+ich möchte Dich/Sie auf die Seite “@PAGE@” im @SITE@ (@ADDRESS@) hinweisen.
+
+@COMMENT@
+
+Beste Grüße
+
+@AUTHOR@
