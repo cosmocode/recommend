@@ -1,33 +1,33 @@
 <?php
 require_once DOKU_PLUGIN . 'admin.php';
-require_once dirname(__FILE__) . '/log.php';
 
 class admin_plugin_recommend extends DokuWiki_Admin_Plugin {
-    function getInfo(){
+
+    protected $entries;
+    protected $logs;
+    protected $month;
+
+    public function getInfo(){
         return confToHash(dirname(__FILE__).'/plugin.info.txt');
     }
 
-    function getMenuText() {
-        return 'Log of recommendations';
-    }
-
-    function handle() {
+    public function handle() {
         if (isset($_REQUEST['rec_month']) &&
             preg_match('/^\d{4}-\d{2}$/', $_REQUEST['rec_month'])) {
             $this->month = $_REQUEST['rec_month'];
         } else {
             $this->month = date('Y-m');
         }
-        $log = new Plugin_Recommend_Log($this->month);
+        $log = new helper_plugin_recommend_log($this->month);
         $this->entries = $log->getEntries();
-        $this->logs = Plugin_Recommend_Log::getLogs();
+        $this->logs = $log->getLogs();
     }
 
-    function getTOC() {
-        return array_map('recommend_make_toc', $this->logs);
+    public function getTOC() {
+        return array_map([$this, 'recommend_make_toc'], $this->logs);
     }
 
-    function html() {
+    public function html() {
         if (!$this->logs) {
             echo 'No recommendations.';
             return;
@@ -43,10 +43,9 @@ class admin_plugin_recommend extends DokuWiki_Admin_Plugin {
         }
         echo '</ul>';
     }
-}
 
-function recommend_make_toc($month) {
-    global $ID;
-    return html_mktocitem('?do=admin&page=recommend&id=' . $ID . '&rec_month=' . $month, $month, 1, '');
-
+    public function recommend_make_toc($month) {
+        global $ID;
+        return html_mktocitem('?do=admin&page=recommend&id=' . $ID . '&rec_month=' . $month, $month, 1, '');
+    }
 }
