@@ -2,6 +2,8 @@
 
 $lang['menu'] = 'Log of recommendations';
 
+$lang['menu_recommend'] = 'Send page';
+
 $lang['yourname'] = 'Your name:';
 $lang['youremailaddress'] = 'Your mailadress:';
 $lang['recipients'] = "Recipient(s):";

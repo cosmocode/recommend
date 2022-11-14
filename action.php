@@ -7,6 +7,8 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
                        'TPL_ACT_UNKNOWN') as $event) {
             $controller->register_hook($event, 'BEFORE', $this, 'handle');
         }
+        $controller->register_hook('MENU_ITEMS_ASSEMBLY', 'AFTER', $this, 'handleMenu');
+
     }
 
     public function handle(Doku_Event $event) {
@@ -41,6 +43,12 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
         echo $this->getForm();
     }
 
+    public function handleMenu(Doku_Event $event)
+    {
+        if ($event->data['view'] !== 'page') return;
+
+        array_splice($event->data['items'], -1, 0, [new \dokuwiki\plugin\recommend\MenuItem()]);
+    }
     /**
      * Returns rendered form
      *
