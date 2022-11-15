@@ -27,6 +27,7 @@ class helper_plugin_recommend_log
 
     public function writeEntry($page, $sender, $receiver, $comment)
     {
+        $comment = str_replace(["\n", '"'], ['', '\''], $comment);
         $logfile = fopen($this->path, 'a');
         fwrite($logfile, date('r') . ': ' .
                          "“${sender}” recommended “${page}” to " .

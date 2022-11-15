@@ -80,7 +80,7 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
 
         $form->addTextInput('r_email', $this->getLang('recipients'))->addClass('edit');
         $form->addTextInput('subject', $this->getLang('subject'))->addClass('edit');
-        $form->addTextarea('comment', $this->getLang('message'))->attr('rows', '8')->attr('cols', '10')->addClass('edit');
+        $form->addTextarea('comment', $this->getLang('message'))->attr('rows', '8')->attr('cols', '40')->addClass('edit');
 
         /** @var helper_plugin_captcha $captcha */
         $captcha = plugin_load('helper', 'captcha');
