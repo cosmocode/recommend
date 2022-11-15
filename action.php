@@ -8,7 +8,6 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
             $controller->register_hook($event, 'BEFORE', $this, 'handle');
         }
         $controller->register_hook('MENU_ITEMS_ASSEMBLY', 'AFTER', $this, 'handleMenu');
-
     }
 
     public function handle(Doku_Event $event) {
@@ -24,22 +23,25 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
 
         $event->stopPropagation();
 
-        if ($_SERVER['REQUEST_METHOD'] == 'POST' &&
-            isset($_POST['sectok']) &&
-            !($err = $this->_handle_post())) {
-            if ($event->name === 'AJAX_CALL_UNKNOWN') {
-                /* To signal success to AJAX. */
-                header('HTTP/1.1 204 No Content');
-                return;
-            }
-            echo 'Thanks for recommending our site.';
-            return;
-        }
-        /* To display msgs even via AJAX. */
+        global $INPUT;
+
+        // early output to trigger display msgs even via AJAX.
         echo ' ';
-        if (isset($err)) {
-            msg($err, -1);
+        tpl_flush();
+        if ($INPUT->server->str('REQUEST_METHOD') === 'POST') {
+            try {
+                $this->handlePost();
+                if ($event->name === 'AJAX_CALL_UNKNOWN') {
+                    $this->ajaxSuccess(); // To signal success to AJAX.
+                } else {
+                    msg($this->getLang('thanks'), 1);
+                }
+                return; // we're done here
+            } catch (\Exception $e) {
+                msg($e->getMessage(), -1);
+            }
         }
+
         echo $this->getForm();
     }
 
@@ -63,7 +65,7 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
 
         $form = new \dokuwiki\Form\Form([
             'action' => wl($id, ['do' => 'recommend'], false, '&'),
-            'id' => 'recommend__plugin',
+            'id' => 'plugin__recommend',
         ]);
         $form->setHiddenField('id', $id); // we need it for the ajax call
 
@@ -86,43 +88,42 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
 
         $form->addTagOpen('div')->addClass('buttons');
         $form->addButton('submit', $this->getLang('send'))->attr('type', 'submit');
-        $form->addButton('reset', $this->getLang('cancel'))->attr('type', 'reset');
         $form->addTagClose('div');
 
         return $form->toHTML();
     }
 
     /**
-     * Handles form submission and returns error state: error message or else false.
+     * Handles form submission
      *
-     * @return string|false
      * @throws Exception
      */
-    protected function _handle_post()
+    protected function handlePost()
     {
+        global $INPUT;
+
         if (!checkSecurityToken()) {
             throw new \Exception('Security token did not match');
         }
 
-        global $INPUT;
-
+        // Captcha plugin
         $helper = null;
-        if (@is_dir(DOKU_PLUGIN.'captcha')) $helper = plugin_load('helper','captcha');
+        if (@is_dir(DOKU_PLUGIN . 'captcha')) $helper = plugin_load('helper','captcha');
         if (!is_null($helper) && $helper->isEnabled() && !$helper->check()) {
-            return 'Wrong captcha';
+            throw new \Exception($this->getLang('err_captcha'));
         }
 
         /* Validate input. */
         $recipient = $INPUT->str('r_email');
         if (!$recipient || !mail_isvalid($recipient)) {
-            return 'Invalid recipient email address submitted';
+            throw new \Exception($this->getLang('err_recipient'));
         }
 
         if (!isset($_POST['s_email']) || !mail_isvalid($_POST['s_email'])) {
-            return 'Invalid sender email address submitted';
+            throw new \Exception($this->getLang('err_sendermail'));
         }
         if (!isset($_POST['s_name']) || trim($_POST['s_name']) === '') {
-            return 'Invalid sender name submitted';
+            throw new \Exception($this->getLang('err_sendername'));
         }
         $s_name = $_POST['s_name'];
         $sender = $s_name . ' <' . $_POST['s_email'] . '>';
@@ -147,13 +148,11 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
         /* Limit to two empty lines. */
         $mailtext = preg_replace('/\n{4,}/', "\n\n\n", $mailtext);
 
-        /* Perform stuff. */
         $this->sendMail($recipient, $mailtext, $sender);
+
         /** @var helper_plugin_recommend_log $log */
         $log = new helper_plugin_recommend_log(date('Y-m'));
         $log->writeEntry($id, $sender, $recipient, $comment);
-
-        return false;
     }
 
     /**
@@ -174,5 +173,19 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
         $mailer->subject($subject);
         $mailer->setBody($mailtext);
         $mailer->send();
+    }
+
+    /**
+     * show success message in ajax mode
+     */
+    protected function ajaxSuccess()
+    {
+        echo '<form id="plugin__recommend" accept-charset="utf-8" method="post" action="?do=recommend">';
+        echo '<div class="no">';
+        echo '<span class="ui-icon ui-icon-circle-check" style="float: left; margin: 0 7px 50px 0;"></span>';
+        echo '<p>' . $this->getLang('done') . '</p>';
+        echo '<button type="reset" class="button">' . $this->getLang('close') . '</button>';
+        echo '</div>';
+        echo '</form>';
     }
 }
