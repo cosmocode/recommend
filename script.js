@@ -1,3 +1,8 @@
+/**
+ * jQuery rewrite is almost completely taken from infomail plugin
+ * @author Andreas Gohr
+ */
+
 const recommend = {
     $dialog: null,
 
