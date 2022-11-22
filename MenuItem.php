@@ -17,7 +17,7 @@ class MenuItem extends \dokuwiki\Menu\Item\AbstractItem
     /** @inheritdoc */
     public function getSvg()
     {
-        return __DIR__ . '/images/recommend.svg';
+        return __DIR__ . '/admin.svg';
     }
 
     /**

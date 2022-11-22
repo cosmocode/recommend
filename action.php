@@ -45,12 +45,19 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
         echo $this->getForm();
     }
 
+    /**
+     * Page menu item
+     *
+     * @param Doku_Event $event
+     * @return void
+     */
     public function handleMenu(Doku_Event $event)
     {
         if ($event->data['view'] !== 'page') return;
 
         array_splice($event->data['items'], -1, 0, [new \dokuwiki\plugin\recommend\MenuItem()]);
     }
+
     /**
      * Returns rendered form
      *
@@ -116,18 +123,25 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
             throw new \Exception('Security token did not match');
         }
 
+        /** @var helper_plugin_recommend_mail $mailHelper */
+        $mailHelper = plugin_load('helper', 'recommend_mail');
+
         // Captcha plugin
-        $helper = null;
-        if (@is_dir(DOKU_PLUGIN . 'captcha')) $helper = plugin_load('helper','captcha');
-        if (!is_null($helper) && $helper->isEnabled() && !$helper->check()) {
+        $captcha = null;
+        if (@is_dir(DOKU_PLUGIN . 'captcha')) $captcha = plugin_load('helper','captcha');
+        if (!is_null($captcha) && $captcha->isEnabled() && !$captcha->check()) {
             throw new \Exception($this->getLang('err_captcha'));
         }
 
-        /* Validate input. */
-        $recipient = $INPUT->str('r_email');
-        if (!$recipient || !mail_isvalid($recipient)) {
+        /* Validate input */
+        $recipients = $INPUT->str('r_email');
+
+        if (empty($recipients)) {
             throw new \Exception($this->getLang('err_recipient'));
         }
+
+        $recipients = $mailHelper->resolveRecipients($recipients);
+        $recipients = implode(',', $recipients);
 
         if (!isset($_POST['s_email']) || !mail_isvalid($_POST['s_email'])) {
             throw new \Exception($this->getLang('err_sendermail'));
@@ -143,12 +157,12 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
 
         $comment = $INPUT->str('comment');
 
-        /* Prepare mail text. */
+        /* Prepare mail text */
+        // FIXME use localization and template snippets
         $mailtext = file_get_contents(dirname(__FILE__).'/template.txt');
 
         global $conf;
-        foreach (array('NAME' => $recipient,
-                       'PAGE' => $id,
+        foreach (array('PAGE' => $id,
                        'SITE' => $conf['title'],
                        'URL'  => wl($id, '', true),
                        'COMMENT' => $comment,
@@ -158,31 +172,11 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
         /* Limit to two empty lines. */
         $mailtext = preg_replace('/\n{4,}/', "\n\n\n", $mailtext);
 
-        $this->sendMail($recipient, $mailtext, $sender);
+        $mailHelper->sendMail($recipients, $mailtext, $sender);
 
         /** @var helper_plugin_recommend_log $log */
         $log = new helper_plugin_recommend_log(date('Y-m'));
-        $log->writeEntry($id, $sender, $recipient, $comment);
-    }
-
-    /**
-     * @param string $recipient
-     * @param string $mailtext
-     * @param string $sender
-     * @return void
-     */
-    protected function sendMail($recipient, $mailtext, $sender)
-    {
-        global $INPUT;
-
-        $mailer = new Mailer();
-        $mailer->bcc($recipient);
-        $mailer->from($sender);
-
-        $subject = $INPUT->str('subject');
-        $mailer->subject($subject);
-        $mailer->setBody($mailtext);
-        $mailer->send();
+        $log->writeEntry($id, $sender, $recipients, $comment);
     }
 
     /**

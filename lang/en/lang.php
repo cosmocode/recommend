@@ -1,6 +1,6 @@
 <?php
 
-$lang['menu'] = 'Log of recommendations';
+$lang['menu'] = 'Recommendations';
 
 $lang['menu_recommend'] = 'Send recommendation';
 
