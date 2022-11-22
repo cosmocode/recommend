@@ -125,7 +125,7 @@ class admin_plugin_recommend extends DokuWiki_Admin_Plugin {
             $form .= '<tr>';
             $form .= '<td>' . hsc($pattern) . '</td>';
             $form .= '<td>' . hsc($user) . '</td>';
-            $form .= '<td>' . $message . '</td>';
+            $form .= '<td>' . nl2br($message) . '</td>';
             $form .= '<td><a class="deletePattern" href="' . $link . '">' . $this->getLang('assign_del') . '</a></td>';
             $form .= '</tr>';
         }

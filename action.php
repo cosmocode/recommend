@@ -69,6 +69,10 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
         ]);
         $form->setHiddenField('id', $id); // we need it for the ajax call
 
+        /** @var helper_plugin_recommend_assignment $helper */
+        $helper = plugin_load('helper', 'recommend_assignment');
+        $template = $helper->loadMatchingTemplate();
+
         if ($INPUT->server->has('REMOTE_USER')) {
             global $USERINFO;
             $form->setHiddenField('s_name', $USERINFO['name']);
@@ -78,9 +82,15 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
             $form->addTextInput('s_email', $this->getLang('youremailaddress'))->addClass('edit');
         }
 
-        $form->addTextInput('r_email', $this->getLang('recipients'))->addClass('edit');
+        $recipientEmails = $template['user'] ?? '';
+        $message = $template['message'] ?? '';
+        $form->addTextInput('r_email', $this->getLang('recipients'))->addClass('edit')->val($recipientEmails);
         $form->addTextInput('subject', $this->getLang('subject'))->addClass('edit');
-        $form->addTextarea('comment', $this->getLang('message'))->attr('rows', '8')->attr('cols', '40')->addClass('edit');
+        $form->addTextarea('comment', $this->getLang('message'))
+            ->attr('rows', '8')
+            ->attr('cols', '40')
+            ->addClass('edit')
+            ->val($message);
 
         /** @var helper_plugin_captcha $captcha */
         $captcha = plugin_load('helper', 'captcha');
