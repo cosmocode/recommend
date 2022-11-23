@@ -158,8 +158,7 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
         $comment = $INPUT->str('comment');
 
         /* Prepare mail text */
-        // FIXME use localization and template snippets
-        $mailtext = file_get_contents(dirname(__FILE__).'/template.txt');
+        $mailtext = file_get_contents($this->localFN('template'));
 
         global $conf;
         foreach (array('PAGE' => $id,
