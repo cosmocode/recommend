@@ -41,17 +41,13 @@ class helper_plugin_recommend_mail extends DokuWiki_Plugin
 
         $recipients = explode(',', $recipients);
 
-        /** @var AuthPlugin $auth */
-        global $auth;
-
         foreach ($recipients as $recipient) {
             $recipient = trim($recipient);
 
             if ($recipient[0] === '@') {
-                $users = $auth->retrieveUsers(0, 0, ['grps' => substr($recipient, 1)]);
-                foreach ($users as $user) {
-                    $resolved[] = $user['mail'];
-                }
+                $this->resolveGroup($resolved, $recipient);
+            } elseif (strpos($recipient, '@') === false) {
+                $this->resolveUser($resolved, $recipient);
             } else {
                 if (!mail_isvalid($recipient)) {
                     throw new \Exception($this->getLang('err_recipient'));
@@ -60,5 +56,38 @@ class helper_plugin_recommend_mail extends DokuWiki_Plugin
             }
         }
         return $resolved;
+    }
+
+    /**
+     * @param array $resolved
+     * @param string $recipient
+     * @return void
+     * @throws Exception
+     */
+    protected function resolveGroup(&$resolved, $recipient)
+    {
+        /** @var AuthPlugin $auth */
+        global $auth;
+        if (!$auth->canDo('getUsers')) {
+            throw new \Exception('');
+        }
+
+        $users = $auth->retrieveUsers(0, 0, ['grps' => substr($recipient, 1)]);
+        foreach ($users as $user) {
+            $resolved[] = $user['mail'];
+        }
+    }
+
+    /**
+     * @param array $resolved
+     * @param string $recipient
+     * @return void
+     */
+    protected function resolveUser(&$resolved, $recipient)
+    {
+        /** @var AuthPlugin $auth */
+        global $auth;
+        $user = $auth->getUserData($recipient);
+        if ($user) $resolved[] = $user['mail'];
     }
 }

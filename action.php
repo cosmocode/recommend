@@ -8,8 +8,15 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
             $controller->register_hook($event, 'BEFORE', $this, 'handle');
         }
         $controller->register_hook('MENU_ITEMS_ASSEMBLY', 'AFTER', $this, 'handleMenu');
+        $controller->register_hook('AJAX_CALL_UNKNOWN', 'BEFORE', $this, 'autocomplete');
     }
 
+    /**
+     * Main processing
+     *
+     * @param Doku_Event $event
+     * @return void
+     */
     public function handle(Doku_Event $event) {
         if ($event->data !=='recommend') {
             return;
@@ -56,6 +63,58 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
         if ($event->data['view'] !== 'page') return;
 
         array_splice($event->data['items'], -1, 0, [new \dokuwiki\plugin\recommend\MenuItem()]);
+    }
+
+    /**
+     * Autocomplete
+     * @param Doku_Event $event
+     * @throws Exception
+     * @author Andreas Gohr
+     *
+     */
+    public function autocomplete(Doku_Event $event)
+    {
+
+        if ($event->data !=='plugin_recommend_ac') {
+            return;
+        }
+
+        $event->preventDefault();
+        $event->stopPropagation();
+
+        /** @var \DokuWiki_Auth_Plugin $auth */
+        global $auth;
+        global $INPUT;
+
+        if (!$auth->canDo('getUsers')) {
+            throw new Exception('The user backend can not search for users');
+        }
+
+        header('Content-Type: application/json');
+
+        // check minimum length
+        $lookup = trim($INPUT->str('search'));
+        if (utf8_strlen($lookup) < 3) {
+            echo json_encode([]);
+            return;
+        }
+
+        // find users by login and name
+        $logins = $auth->retrieveUsers(0, 10, ['user' => $lookup]);
+        if (count($logins) < 10) {
+            $logins = array_merge($logins, $auth->retrieveUsers(0, 10, ['name' => $lookup]));
+        }
+
+        // reformat result for jQuery UI Autocomplete
+        $users = [];
+        foreach ($logins as $login => $info) {
+            $users[] = [
+                'label' => $info['name'] . ' [' . $login . ']',
+                'value' => $login
+            ];
+        }
+
+        echo json_encode($users);
     }
 
     /**

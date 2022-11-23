@@ -65,9 +65,52 @@ const recommend = {
      * @param {string} data The HTML
      */
     handleResult: function (data) {
+
+        function commasplit( val ) {
+            return val.split( /,\s*/ );
+        }
+
         recommend.$dialog.html(data);
         recommend.$dialog.find('button[type=reset]').click(recommend.cancel);
         recommend.$dialog.find('button[type=submit]').click(recommend.send);
+        recommend.$dialog.find('input[name=r_email]').autocomplete({
+            source: function (request, cb) {
+                let term = request.term;
+                term = commasplit(term).pop();
+
+                const payload = {};
+                payload['call'] = 'plugin_recommend_ac';
+                payload['search'] = term;
+
+                jQuery.post(DOKU_BASE + 'lib/exe/ajax.php', payload, cb, 'json')
+                    .fail(function (result) {
+                        if (result.responseJSON) {
+                            if (result.responseJSON.stacktrace) {
+                                console.error(result.responseJSON.error + "\n" + result.responseJSON.stacktrace);
+                            }
+                            alert(result.responseJSON.error);
+                        } else {
+                            // some fatal error occurred, get a text only version of the response
+                            alert(jQuery(result.responseText).text());
+                        }
+                    });
+            },
+            focus: function() {
+                // prevent value inserted on focus
+                return false;
+            },
+            select: function( event, ui ) {
+                let terms = commasplit( this.value );
+                // remove the current input
+                terms.pop();
+                // add the selected item
+                terms.push( ui.item.value );
+                // add placeholder to get the comma-and-space at the end
+                terms.push( "" );
+                this.value = terms.join( ", " );
+                return false;
+            }
+        });
     },
 
     /**
