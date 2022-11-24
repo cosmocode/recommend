@@ -61,6 +61,8 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
     public function handleMenu(Doku_Event $event)
     {
         if ($event->data['view'] !== 'page') return;
+        // menu item is only for logged in users
+        if (empty($_SERVER['REMOTE_USER'])) return;
 
         array_splice($event->data['items'], -1, 0, [new \dokuwiki\plugin\recommend\MenuItem()]);
     }
