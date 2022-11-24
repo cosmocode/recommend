@@ -148,15 +148,17 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
             $form->addTextInput('s_email', $this->getLang('youremailaddress'))->addClass('edit');
         }
 
-        $recipientEmails = $template['user'] ?? '';
-        $message = $template['message'] ?? '';
-        $form->addTextInput('r_email', $this->getLang('recipients'))->addClass('edit')->val($recipientEmails);
-        $form->addTextInput('subject', $this->getLang('subject'))->addClass('edit');
+        $form->addTextInput('r_email', $this->getLang('recipients'))
+            ->addClass('edit')
+            ->val($template['user'] ?? '');
+        $form->addTextInput('subject', $this->getLang('subject'))
+            ->addClass('edit')
+            ->val($template['subject'] ?? '');
         $form->addTextarea('comment', $this->getLang('message'))
             ->attr('rows', '8')
             ->attr('cols', '40')
             ->addClass('edit')
-            ->val($message);
+            ->val($template['message'] ?? '');
 
         /** @var helper_plugin_captcha $captcha */
         $captcha = plugin_load('helper', 'captcha');

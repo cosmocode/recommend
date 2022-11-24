@@ -27,6 +27,7 @@ class helper_plugin_recommend_assignment
             return !(
                 $assignment['pattern'] === $data['pattern']
                 && $assignment['user'] === $data['user']
+                && $assignment['subject'] === $data['subject']
                 && $assignment['message'] === $data['message']
             );
         });

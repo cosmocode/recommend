@@ -63,11 +63,9 @@ class admin_plugin_recommend extends DokuWiki_Admin_Plugin {
 
         if (!$this->logs) {
             echo 'No recommendations.';
-            return;
         }
         if (!$this->entries) {
             echo 'No recommendations were made in ' . $this->month . '.';
-            return;
         }
 
         echo '<h2>' . $this->getLang('headline_snippets') . '</h2>';
@@ -99,6 +97,7 @@ class admin_plugin_recommend extends DokuWiki_Admin_Plugin {
         $form .= '<tr>';
         $form .= '<th>' . $this->getLang('assign_pattern') . '</th>';
         $form .= '<th>' . $this->getLang('assign_user') . '</th>';
+        $form .= '<th>' . $this->getLang('assign_subject') . '</th>';
         $form .= '<th>' . $this->getLang('assign_message') . '</th>';
         $form .= '<th></th>';
         $form .= '</tr>';
@@ -107,6 +106,7 @@ class admin_plugin_recommend extends DokuWiki_Admin_Plugin {
         foreach ($assignments as $assignment) {
             $pattern = $assignment['pattern'];
             $user = $assignment['user'];
+            $subject = $assignment['subject'];
             $message = $assignment['message'];
 
             $link = wl(
@@ -118,6 +118,7 @@ class admin_plugin_recommend extends DokuWiki_Admin_Plugin {
                     'sectok' => getSecurityToken(),
                     'assignment[pattern]' => $pattern,
                     'assignment[user]' => $user,
+                    'assignment[subject]' => $subject,
                     'assignment[message]' => $message,
                 ]
             );
@@ -125,6 +126,7 @@ class admin_plugin_recommend extends DokuWiki_Admin_Plugin {
             $form .= '<tr>';
             $form .= '<td>' . hsc($pattern) . '</td>';
             $form .= '<td>' . hsc($user) . '</td>';
+            $form .= '<td>' . hsc($subject) . '</td>';
             $form .= '<td>' . nl2br($message) . '</td>';
             $form .= '<td><a class="deletePattern" href="' . $link . '">' . $this->getLang('assign_del') . '</a></td>';
             $form .= '</tr>';
@@ -134,6 +136,7 @@ class admin_plugin_recommend extends DokuWiki_Admin_Plugin {
         $form .= '<tr>';
         $form .= '<td><input type="text" name="assignment[pattern]" /></td>';
         $form .= '<td><input type="text" name="assignment[user]" /></td>';
+        $form .= '<td><input type="text" name="assignment[subject]" /></td>';
         $form .= '<td><textarea cols="30" rows="4" name="assignment[message]"></textarea></td>';
         $form .= '<td><button type="submit" name="action" value="add">' . $this->getLang('assign_add') . '</button></td>';
         $form .= '</tr>';

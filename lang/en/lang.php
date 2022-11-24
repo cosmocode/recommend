@@ -28,4 +28,5 @@ $lang['assign_add'] = 'Add';
 $lang['assign_del'] = 'Delete';
 $lang['assign_pattern'] = 'Namespace';
 $lang['assign_user'] = 'Recipient(s)';
+$lang['assign_subject'] = 'Subject';
 $lang['assign_message'] = 'Message';
