@@ -49,7 +49,7 @@ class helper_plugin_recommend_mail extends DokuWiki_Plugin
             } elseif (strpos($recipient, '@') === false) {
                 $this->resolveUser($resolved, $recipient);
             } else {
-                if (!mail_isvalid($recipient)) {
+                if (!$this->emailIsValid($recipient)) {
                     throw new \Exception($this->getLang('err_recipient'));
                 }
                 $resolved[] = $recipient;
@@ -69,7 +69,7 @@ class helper_plugin_recommend_mail extends DokuWiki_Plugin
         /** @var AuthPlugin $auth */
         global $auth;
         if (!$auth->canDo('getUsers')) {
-            throw new \Exception('');
+            throw new \Exception('Auth cannot fetch users by group.');
         }
 
         $users = $auth->retrieveUsers(0, 0, ['grps' => substr($recipient, 1)]);
@@ -89,5 +89,27 @@ class helper_plugin_recommend_mail extends DokuWiki_Plugin
         global $auth;
         $user = $auth->getUserData($recipient);
         if ($user) $resolved[] = $user['mail'];
+    }
+
+    /**
+     * Checks validity of given mail. With config 'wikionly' set to true
+     * also checks if user with this email is known.
+     *
+     * @param $mail
+     * @return bool
+     * @throws Exception
+     */
+    protected function emailIsValid($mail)
+    {
+        if(!$this->getConf('wikionly')) return mail_isvalid($mail);
+
+        /** @var AuthPlugin $auth */
+        global $auth;
+        if (!$auth->canDo('getUsers')) {
+            throw new \Exception('Auth cannot fetch users by email.');
+        }
+
+        $user = $auth->retrieveUsers(0, 1, ['mail' => $mail]);
+        return (bool)$user;
     }
 }

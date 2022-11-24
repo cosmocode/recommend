@@ -1,2 +1,2 @@
 <?php
-$lang['allowanonymous'] = 'Allow anonymous users to recommend a page. Should only be set if the captcha helper plugin is available.';
+$lang['wikionly'] = 'Send emails only to wiki users, do not allow arbitrary emails.';
