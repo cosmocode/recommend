@@ -1,0 +1,9 @@
+===== Recommend =====
+
+Here you can create templates that will be used as placeholders in the email form.
+
+The pattern can be one of the following:
+  * Page ID
+  * Namespace excluding subnamespaces are defined as ''<nowiki>namespace:*</nowiki>''
+  * Namespace including subnamespaces are defined as ''<nowiki>namespace:**</nowiki>''
+  * Regular expressions starting and ending with ''/'' are matched against a '':'' prefixed full page id

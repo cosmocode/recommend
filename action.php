@@ -1,22 +1,24 @@
 <?php
-require_once DOKU_PLUGIN . 'action.php';
-require_once DOKU_INC . 'inc/form.php';
-require_once dirname(__FILE__) . '/log.php';
 
 class action_plugin_recommend extends DokuWiki_Action_Plugin {
-    function getInfo(){
-        return confToHash(dirname(__FILE__).'/plugin.info.txt');
-    }
 
-    function register(Doku_Event_Handler $controller) {
+    public function register(Doku_Event_Handler $controller) {
         foreach (array('ACTION_ACT_PREPROCESS', 'AJAX_CALL_UNKNOWN',
                        'TPL_ACT_UNKNOWN') as $event) {
-            $controller->register_hook($event, 'BEFORE', $this, '_handle');
+            $controller->register_hook($event, 'BEFORE', $this, 'handle');
         }
+        $controller->register_hook('MENU_ITEMS_ASSEMBLY', 'AFTER', $this, 'handleMenu');
+        $controller->register_hook('AJAX_CALL_UNKNOWN', 'BEFORE', $this, 'autocomplete');
     }
 
-    function _handle(&$event, $param) {
-        if (!in_array($event->data, array('recommend', 'plugin_recommend'))) {
+    /**
+     * Main processing
+     *
+     * @param Doku_Event $event
+     * @return void
+     */
+    public function handle(Doku_Event $event) {
+        if ($event->data !=='recommend') {
             return;
         }
 
@@ -28,112 +30,203 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
 
         $event->stopPropagation();
 
-        if ($_SERVER['REQUEST_METHOD'] == 'POST' &&
-            isset($_POST['sectok']) &&
-            !($err = $this->_handle_post())) {
-            if ($event->name === 'AJAX_CALL_UNKNOWN') {
-                /* To signal success to AJAX. */
-                header('HTTP/1.1 204 No Content');
-                return;
+        global $INPUT;
+
+        // early output to trigger display msgs even via AJAX.
+        echo ' ';
+        tpl_flush();
+        if ($INPUT->server->str('REQUEST_METHOD') === 'POST') {
+            try {
+                $this->handlePost();
+                if ($event->name === 'AJAX_CALL_UNKNOWN') {
+                    $this->ajaxSuccess(); // To signal success to AJAX.
+                } else {
+                    msg($this->getLang('thanks'), 1);
+                }
+                return; // we're done here
+            } catch (\Exception $e) {
+                msg($e->getMessage(), -1);
             }
-            echo 'Thanks for recommending our site.';
+        }
+
+        echo $this->getForm();
+    }
+
+    /**
+     * Page menu item
+     *
+     * @param Doku_Event $event
+     * @return void
+     */
+    public function handleMenu(Doku_Event $event)
+    {
+        if ($event->data['view'] !== 'page') return;
+        // menu item is only for logged in users
+        if (empty($_SERVER['REMOTE_USER'])) return;
+
+        array_splice($event->data['items'], -1, 0, [new \dokuwiki\plugin\recommend\MenuItem()]);
+    }
+
+    /**
+     * Autocomplete
+     * @param Doku_Event $event
+     * @throws Exception
+     * @author Andreas Gohr
+     *
+     */
+    public function autocomplete(Doku_Event $event)
+    {
+
+        if ($event->data !=='plugin_recommend_ac') {
             return;
         }
-        /* To display msgs even via AJAX. */
-        echo ' ';
-        if (isset($err)) {
-            msg($err, -1);
+
+        $event->preventDefault();
+        $event->stopPropagation();
+
+        /** @var \DokuWiki_Auth_Plugin $auth */
+        global $auth;
+        global $INPUT;
+
+        if (!$auth->canDo('getUsers')) {
+            throw new Exception('The user backend can not search for users');
         }
-        $this->_show_form();
+
+        header('Content-Type: application/json');
+
+        // check minimum length
+        $lookup = trim($INPUT->str('search'));
+        if (utf8_strlen($lookup) < 3) {
+            echo json_encode([]);
+            return;
+        }
+
+        // find users by login and name
+        $logins = $auth->retrieveUsers(0, 10, ['user' => $lookup]);
+        if (count($logins) < 10) {
+            $logins = array_merge($logins, $auth->retrieveUsers(0, 10, ['name' => $lookup]));
+        }
+
+        // reformat result for jQuery UI Autocomplete
+        $users = [];
+        foreach ($logins as $login => $info) {
+            $users[] = [
+                'label' => $info['name'] . ' [' . $login . ']',
+                'value' => $login
+            ];
+        }
+
+        echo json_encode($users);
     }
 
-    function _show_form() {
-        $r_name  = isset($_REQUEST['r_name']) ? $_REQUEST['r_name'] : '';
-        $r_email = isset($_REQUEST['r_email']) ? $_REQUEST['r_email'] : '';
-        $s_name  = isset($_REQUEST['s_name']) ? $_REQUEST['s_name'] : '';
-        $s_email = isset($_REQUEST['s_email']) ? $_REQUEST['s_email'] : '';
-        $comment = isset($_REQUEST['comment']) ? $_REQUEST['r_comment'] : '';
-        if (isset($_REQUEST['id'])) {
-            $id  = $_REQUEST['id'];
-        } else {
-            global $ID;
-            if (!isset($ID)) {
-                msg('Unknown page', -1);
-                return;
-            }
-            $id  = $ID;
-        }
-        $form = new Doku_Form('recommend_plugin', '?do=recommend');
-        $form->addHidden('id', $id);
-        $form->startFieldset('Recommend page “' . hsc($id). '”');
-        if (isset($_SERVER['REMOTE_USER'])) {
+    /**
+     * Returns rendered form
+     *
+     * @return string
+     */
+    protected function getForm()
+    {
+        global $INPUT;
+
+        $id = getID(); // we may run in AJAX context
+        if ($id === '') throw new \RuntimeException('No ID given');
+
+        $form = new \dokuwiki\Form\Form([
+            'action' => wl($id, ['do' => 'recommend'], false, '&'),
+            'id' => 'plugin__recommend',
+        ]);
+        $form->setHiddenField('id', $id); // we need it for the ajax call
+
+        /** @var helper_plugin_recommend_assignment $helper */
+        $helper = plugin_load('helper', 'recommend_assignment');
+        $template = $helper->loadMatchingTemplate();
+
+        if ($INPUT->server->has('REMOTE_USER')) {
             global $USERINFO;
-            $form->addHidden('s_name', $USERINFO['name']);
-            $form->addHidden('s_email', $USERINFO['mail']);
+            $form->setHiddenField('s_name', $USERINFO['name']);
+            $form->setHiddenField('s_email', $USERINFO['mail']);
         } else {
-            $form->addElement(form_makeTextField('s_name', $s_name, 'Your name'));
-            $form->addElement(form_makeTextField('s_email', $s_email,
-                                                 'Your email address'));
-        }
-        $form->addElement(form_makeTextField('r_name', $r_name, 'Recipient name'));
-        $form->addElement(form_makeTextField('r_email', $r_email,
-                                             'Recipient email address'));
-        $form->addElement('<label><span>'.hsc('Additional comment').'</span>'.
-                          '<textarea name="comment" rows="3" cols="10" ' .
-                          'class="edit">' . $comment . '</textarea></label>');
-        $helper = null;
-        if(@is_dir(DOKU_PLUGIN.'captcha')) $helper = plugin_load('helper','captcha');
-        if(!is_null($helper) && $helper->isEnabled()){
-            $form->addElement($helper->getHTML());
+            $form->addTextInput('s_name', $this->getLang('yourname'))->addClass('edit');
+            $form->addTextInput('s_email', $this->getLang('youremailaddress'))->addClass('edit');
         }
 
-        $form->addElement(form_makeButton('submit', '', 'Send recommendation'));
-        $form->addElement(form_makeButton('submit', 'cancel', 'Cancel'));
-        $form->printForm();
+        $form->addTextInput('r_email', $this->getLang('recipients'))
+            ->addClass('edit')
+            ->val($template['user'] ?? '');
+        $form->addTextInput('subject', $this->getLang('subject'))
+            ->addClass('edit')
+            ->val($template['subject'] ?? '');
+        $form->addTextarea('comment', $this->getLang('message'))
+            ->attr('rows', '8')
+            ->attr('cols', '40')
+            ->addClass('edit')
+            ->val($template['message'] ?? '');
+
+        /** @var helper_plugin_captcha $captcha */
+        $captcha = plugin_load('helper', 'captcha');
+        if ($captcha) $form->addHTML($captcha->getHTML());
+
+        $form->addTagOpen('div')->addClass('buttons');
+        $form->addButton('submit', $this->getLang('send'))->attr('type', 'submit');
+        $form->addTagClose('div');
+
+        return $form->toHTML();
     }
 
-    function _handle_post() {
-        $helper = null;
-        if(@is_dir(DOKU_PLUGIN.'captcha')) $helper = plugin_load('helper','captcha');
-        if(!is_null($helper) && $helper->isEnabled() && !$helper->check()) {
-            return 'Wrong captcha';
+    /**
+     * Handles form submission
+     *
+     * @throws Exception
+     */
+    protected function handlePost()
+    {
+        global $INPUT;
+
+        if (!checkSecurityToken()) {
+            throw new \Exception('Security token did not match');
         }
 
-        /* Validate input. */
-        if (!isset($_POST['r_email']) || !mail_isvalid($_POST['r_email'])) {
-            return 'Invalid recipient email address submitted';
+        /** @var helper_plugin_recommend_mail $mailHelper */
+        $mailHelper = plugin_load('helper', 'recommend_mail');
+
+        // Captcha plugin
+        $captcha = null;
+        if (@is_dir(DOKU_PLUGIN . 'captcha')) $captcha = plugin_load('helper','captcha');
+        if (!is_null($captcha) && $captcha->isEnabled() && !$captcha->check()) {
+            throw new \Exception($this->getLang('err_captcha'));
         }
-        if (!isset($_POST['r_name']) || trim($_POST['r_name']) === '') {
-            return 'Invalid recipient name submitted';
+
+        /* Validate input */
+        $recipients = $INPUT->str('r_email');
+
+        if (empty($recipients)) {
+            throw new \Exception($this->getLang('err_recipient'));
         }
-        $r_name    = $_POST['r_name'];
-        $recipient = $r_name . ' <' . $_POST['r_email'] . '>';
+
+        $recipients = $mailHelper->resolveRecipients($recipients);
+        $recipients = implode(',', $recipients);
 
         if (!isset($_POST['s_email']) || !mail_isvalid($_POST['s_email'])) {
-            return 'Invalid sender email address submitted';
+            throw new \Exception($this->getLang('err_sendermail'));
         }
         if (!isset($_POST['s_name']) || trim($_POST['s_name']) === '') {
-            return 'Invalid sender name submitted';
+            throw new \Exception($this->getLang('err_sendername'));
         }
         $s_name = $_POST['s_name'];
         $sender = $s_name . ' <' . $_POST['s_email'] . '>';
 
-        if (!isset($_POST['id']) || !page_exists($_POST['id'])) {
-            return 'Invalid page submitted';
-        }
-        $page = $_POST['id'];
+        $id = $INPUT->filter('cleanID')->str('id');
+        if ($id === '' || !page_exists($id)) throw new \Exception($this->getLang('err_page'));
 
-        $comment = isset($_POST['comment']) ? $_POST['comment'] : null;
+        $comment = $INPUT->str('comment');
 
-        /* Prepare mail text. */
-        $mailtext = file_get_contents(dirname(__FILE__).'/template.txt');
+        /* Prepare mail text */
+        $mailtext = file_get_contents($this->localFN('template'));
 
         global $conf;
-        global $USERINFO;
-        foreach (array('NAME' => $r_name,
-                       'PAGE' => $page,
+        foreach (array('PAGE' => $id,
                        'SITE' => $conf['title'],
-                       'URL'  => wl($page, '', true),
+                       'URL'  => wl($id, '', true),
                        'COMMENT' => $comment,
                        'AUTHOR' => $s_name) as $var => $val) {
             $mailtext = str_replace('@' . $var . '@', $val, $mailtext);
@@ -141,10 +234,24 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
         /* Limit to two empty lines. */
         $mailtext = preg_replace('/\n{4,}/', "\n\n\n", $mailtext);
 
-        /* Perform stuff. */
-        mail_send($recipient, 'Page recommendation', $mailtext, $sender);
-        $log = new Plugin_Recommend_Log(date('Y-m'));
-        $log->writeEntry($page, $sender, $recipient, $comment);
-        return false;
+        $mailHelper->sendMail($recipients, $mailtext, $sender);
+
+        /** @var helper_plugin_recommend_log $log */
+        $log = new helper_plugin_recommend_log(date('Y-m'));
+        $log->writeEntry($id, $sender, $recipients, $comment);
+    }
+
+    /**
+     * show success message in ajax mode
+     */
+    protected function ajaxSuccess()
+    {
+        echo '<form id="plugin__recommend" accept-charset="utf-8" method="post" action="?do=recommend">';
+        echo '<div class="no">';
+        echo '<span class="ui-icon ui-icon-circle-check" style="float: left; margin: 0 7px 50px 0;"></span>';
+        echo '<p>' . $this->getLang('done') . '</p>';
+        echo '<button type="reset" class="button">' . $this->getLang('close') . '</button>';
+        echo '</div>';
+        echo '</form>';
     }
 }

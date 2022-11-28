@@ -1,2 +1,2 @@
 <?php
-$conf['allowanonymous'] = true;
+$conf['wikionly'] = true;

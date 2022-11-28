@@ -11,48 +11,48 @@
     background: white;
 }
 
-div.recommend_plugin {
+div.plugin__recommend {
     width: 50%;
     text-align: center;
     font-size: 120%;
     padding: 2em;
 }
 
-form#recommend_plugin {
+form#plugin__recommend {
     width: 100%;
     text-align: center;
 }
 
-form#recommend_plugin p {
+form#plugin__recommend p {
     font-size: 90%;
     text-align: left;
 }
 
-form#recommend_plugin fieldset {
+form#plugin__recommend fieldset {
     width: 90%;
 }
 
-form#recommend_plugin label {
+form#plugin__recommend label {
     display: block;
     overflow: auto;
     margin: 5px;
 }
 
-form#recommend_plugin label span {
-    width: 48%;
+form#plugin__recommend label span {
+    width: 28%;
     text-align: right;
     display: block;
     float: left;
 }
 
-form#recommend_plugin label input {
+form#plugin__recommend label input {
     float: left;
     margin-left: 5px;
 }
 
-form#recommend_plugin label textarea.edit,
-form#recommend_plugin label input.edit {
-    width: 48%;
+form#plugin__recommend label textarea.edit,
+form#plugin__recommend label input.edit {
+    width: 68%;
     display: block;
     float: left;
     margin-left: 5px;

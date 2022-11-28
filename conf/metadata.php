@@ -1,2 +1,2 @@
 <?php
-$meta['allowanonymous'] = array('onoff');
+$meta['wikionly'] = array('onoff');

@@ -1,78 +1,148 @@
-(function () {
+/**
+ * jQuery rewrite is almost completely taken from infomail plugin
+ * @author Andreas Gohr
+ */
 
-/* Lib */
+const recommend = {
+    $dialog: null,
 
-var recommend_ajax_call = 'plugin_recommend';
+    /**
+     * Attach click handler to our link
+     */
+    init: function () {
+        jQuery('a.plugin_recommend').click(recommend.initform);
+        jQuery('li.recommend a').click(recommend.initform);
+    },
 
-function sack_form(form, fnc) {
-    var ajax = new sack(DOKU_BASE + 'lib/exe/ajax.php');
-    ajax.setVar('call', recommend_ajax_call);
-    function serializeByTag(tag) {
-        var inps = form.getElementsByTagName(tag);
-        for (var inp in inps) {
-            if (inps[inp].name) {
-                ajax.setVar(inps[inp].name, inps[inp].value);
-            }
+    /**
+     * Initializes the form dialog on click
+     *
+     * @param {Event} e
+     */
+    initform: function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+
+        let url = new URL(e.currentTarget.href);
+        // searchParams only works, when no URL rewriting takes place
+        // from Dokuwiki - else there is no parameter id and this
+        // returns null
+        let id = url.searchParams.get('id');
+        if ( id === null ) {
+            // Convert url to string an get the last part without
+            // any parameters from actions and the like
+            url = String(url);
+            id = url.split('/').pop().split('?')[0];
         }
+
+        recommend.$dialog = jQuery('<div></div>');
+        recommend.$dialog.dialog(
+            {
+                modal: true,
+                title: LANG.plugins.recommend.formname + ' ' + id,
+                minWidth: 680,
+                height: "auto",
+                close: function () {
+                    recommend.$dialog.dialog('destroy')
+                }
+            }
+        );
+
+        jQuery.get(
+            DOKU_BASE + 'lib/exe/ajax.php',
+            {
+                'call': 'recommend',
+                'id': id
+            },
+            recommend.handleResult,
+            'html'
+        );
+    },
+
+    /**
+     * Display the result and attach handlers
+     *
+     * @param {string} data The HTML
+     */
+    handleResult: function (data) {
+
+        function commasplit( val ) {
+            return val.split( /,\s*/ );
+        }
+
+        recommend.$dialog.html(data);
+        recommend.$dialog.find('button[type=reset]').click(recommend.cancel);
+        recommend.$dialog.find('button[type=submit]').click(recommend.send);
+        recommend.$dialog.find('input[name=r_email]').autocomplete({
+            source: function (request, cb) {
+                let term = request.term;
+                term = commasplit(term).pop();
+
+                const payload = {};
+                payload['call'] = 'plugin_recommend_ac';
+                payload['search'] = term;
+
+                jQuery.post(DOKU_BASE + 'lib/exe/ajax.php', payload, cb, 'json')
+                    .fail(function (result) {
+                        if (result.responseJSON) {
+                            if (result.responseJSON.stacktrace) {
+                                console.error(result.responseJSON.error + "\n" + result.responseJSON.stacktrace);
+                            }
+                            alert(result.responseJSON.error);
+                        } else {
+                            // some fatal error occurred, get a text only version of the response
+                            alert(jQuery(result.responseText).text());
+                        }
+                    });
+            },
+            focus: function() {
+                // prevent value inserted on focus
+                return false;
+            },
+            select: function( event, ui ) {
+                let terms = commasplit( this.value );
+                // remove the current input
+                terms.pop();
+                // add the selected item
+                terms.push( ui.item.value );
+                // add placeholder to get the comma-and-space at the end
+                terms.push( "" );
+                this.value = terms.join( ", " );
+                return false;
+            }
+        });
+    },
+
+    /**
+     * Cancel the recommend form
+     *
+     * @param {Event} e
+     */
+    cancel: function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        recommend.$dialog.dialog('destroy');
+    },
+
+    /**
+     * Serialize the form and send it
+     *
+     * @param {Event} e
+     */
+    send: function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        let data = recommend.$dialog.find('form').serialize();
+        data = data + '&call=recommend';
+
+        recommend.$dialog.html('...');
+        jQuery.post(
+            DOKU_BASE + 'lib/exe/ajax.php',
+            data,
+            recommend.handleResult,
+            'html'
+        );
     }
-    serializeByTag('input');
-    serializeByTag('textarea');
-    ajax.onCompletion = fnc;
-    ajax.runAJAX();
-    return false;
-}
-
-function bind(fnc, val) {
-    return function () {
-        return fnc(val);
-    };
-}
-
-function change_form_handler(forms, handler) {
-    if (!forms) return;
-    for (var formid in forms) {
-        var form = forms[formid];
-        form.onsubmit = bind(handler, form);
-    }
-}
-
-/* Recommend */
-
-function recommend_box(content) {
-    var div = $('recommend_box');
-    if (!div) {
-        div = document.createElement('div');
-        div.id = 'recommend_box';
-    } else if (content === '') {
-        div.parentNode.removeChild(div);
-        return;
-    }
-    div.innerHTML = content;
-    document.body.appendChild(div);
-    return div;
-}
-
-function recommend_handle() {
-    if (this.response === "AJAX call '" + recommend_ajax_call + "' unknown!\n") {
-        /* No user logged in. */
-        return;
-    }
-    if (this.responseStatus[0] === 204) {
-        var box = recommend_box('<form id="recommend_plugin" accept-charset="utf-8" method="post" action="?do=recommend"><div class="no"><fieldset><legend>Finished</legend<p>Thanks for recommending our site.</p><input type="submit" class="button" value="Cancel" name="do[cancel]"/></fieldset></div></form>');
-    } else {
-
-        var box = recommend_box(this.response);
-        box.getElementsByTagName('label')[0].focus();
-        change_form_handler(box.getElementsByTagName('form'),
-                            function (form) {return sack_form(form, recommend_handle); });
-    }
-    var inputs = box.getElementsByTagName('input');
-    inputs[inputs.length - 1].onclick = function() {recommend_box(''); return false;};
-}
-
-addInitEvent(function () {
-                change_form_handler(getElementsByClass('btn_recommend', document, 'form'),
-                                    function (form) {return sack_form(form, recommend_handle); });
-             });
-
-}());
+};
+jQuery(recommend.init);

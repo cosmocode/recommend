@@ -1,9 +1,0 @@
-Hi @NAME@,
-
-I would like to recommend you the page “@PAGE@” on @SITE@ (@URL@).
-
-@COMMENT@
-
-Bye,
-
-@AUTHOR@

@@ -1,0 +1,7 @@
+Hallo,
+
+Ich empfehle Ihnen die Seite “@PAGE@” auf @SITE@ ( @URL@ ).
+
+@COMMENT@
+
+@AUTHOR@
