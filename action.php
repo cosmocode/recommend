@@ -220,21 +220,16 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
 
         $comment = $INPUT->str('comment');
 
-        /* Prepare mail text */
-        $mailtext = file_get_contents($this->localFN('template'));
-
         global $conf;
-        foreach (array('PAGE' => $id,
-                       'SITE' => $conf['title'],
-                       'URL'  => wl($id, '', true),
-                       'COMMENT' => $comment,
-                       'AUTHOR' => $s_name) as $var => $val) {
-            $mailtext = str_replace('@' . $var . '@', $val, $mailtext);
-        }
-        /* Limit to two empty lines. */
-        $mailtext = preg_replace('/\n{4,}/', "\n\n\n", $mailtext);
+        $replacements = [
+            'PAGE' => $id,
+            'SITE' => $conf['title'],
+            'URL'  => wl($id, '', true),
+            'COMMENT' => $comment,
+            'AUTHOR' => $s_name
+        ];
 
-        $mailHelper->sendMail($recipients, $mailtext, $sender);
+        $mailHelper->sendMail($recipients, $sender, $replacements);
 
         /** @var helper_plugin_recommend_log $log */
         $log = new helper_plugin_recommend_log(date('Y-m'));

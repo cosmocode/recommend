@@ -9,13 +9,19 @@ class helper_plugin_recommend_mail extends DokuWiki_Plugin
 {
     /**
      * @param string $recipient
-     * @param string $mailtext
      * @param string $sender
+     * @param array $replacements
+     *
      * @return void
      */
-    public function sendMail($recipient, $mailtext, $sender)
+    public function sendMail($recipient, $sender, $replacements = [])
     {
         global $INPUT;
+
+        $mailtext = file_get_contents($this->localFN('template'));
+
+        /* Limit to two empty lines. */
+        $mailtext = preg_replace('/\n{4,}/', "\n\n\n", $mailtext);
 
         $mailer = new Mailer();
         $mailer->bcc($recipient);
@@ -23,7 +29,7 @@ class helper_plugin_recommend_mail extends DokuWiki_Plugin
 
         $subject = $INPUT->str('subject');
         $mailer->subject($subject);
-        $mailer->setBody($mailtext);
+        $mailer->setBody($mailtext, $replacements);
         $mailer->send();
     }
 
