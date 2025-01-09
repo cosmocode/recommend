@@ -15,8 +15,10 @@ class admin_plugin_recommend extends DokuWiki_Admin_Plugin {
             $this->month = date('Y-m');
         }
         $log = new helper_plugin_recommend_log($this->month);
-        $this->entries = $log->getEntries();
+        // all log files
         $this->logs = $log->getLogs();
+        // entries for the current/selected month
+        $this->entries = $log->getEntries();
 
         global $INPUT;
         global $ID;
@@ -61,19 +63,23 @@ class admin_plugin_recommend extends DokuWiki_Admin_Plugin {
     public function html() {
         echo $this->locale_xhtml('intro');
 
-        if (!$this->logs) {
-            echo 'No recommendations.';
-        }
-        if (!$this->entries) {
-            echo 'No recommendations were made in ' . $this->month . '.';
-        }
-
         echo '<h2>' . $this->getLang('headline_snippets') . '</h2>';
 
         echo $this->getForm();
 
+        if (!$this->logs) {
+            echo $this->getLang('no_logs');
+            return;
+        }
+
         echo '<h2>' . $this->getLang('headline_logs') . '</h2>';
-        echo '<p>In ' . $this->month . ', your users made the following ' . count($this->entries) . ' recommendations:</p>';
+
+        if (!$this->entries) {
+            echo sprintf($this->getLang('no_entries'), $this->month);
+            return;
+        }
+
+        echo sprintf('<p>' . $this->getLang('status_entries') . '</p>', $this->month, count($this->entries));
         echo '<ul>';
         foreach (array_reverse($this->entries) as $entry) {
             echo "<li>" . hsc($entry) . "</li>";
@@ -103,33 +109,35 @@ class admin_plugin_recommend extends DokuWiki_Admin_Plugin {
         $form .= '</tr>';
 
         // existing assignments
-        foreach ($assignments as $assignment) {
-            $pattern = $assignment['pattern'];
-            $user = $assignment['user'];
-            $subject = $assignment['subject'];
-            $message = $assignment['message'];
+        if ($assignments) {
+            foreach ($assignments as $assignment) {
+                $pattern = $assignment['pattern'];
+                $user = $assignment['user'];
+                $subject = $assignment['subject'];
+                $message = $assignment['message'];
 
-            $link = wl(
-                $ID,
-                [
-                    'do' => 'admin',
-                    'page' => 'recommend',
-                    'action' => 'delete',
-                    'sectok' => getSecurityToken(),
-                    'assignment[pattern]' => $pattern,
-                    'assignment[user]' => $user,
-                    'assignment[subject]' => $subject,
-                    'assignment[message]' => $message,
-                ]
-            );
+                $link = wl(
+                    $ID,
+                    [
+                        'do' => 'admin',
+                        'page' => 'recommend',
+                        'action' => 'delete',
+                        'sectok' => getSecurityToken(),
+                        'assignment[pattern]' => $pattern,
+                        'assignment[user]' => $user,
+                        'assignment[subject]' => $subject,
+                        'assignment[message]' => $message,
+                    ]
+                );
 
-            $form .= '<tr>';
-            $form .= '<td>' . hsc($pattern) . '</td>';
-            $form .= '<td>' . hsc($user) . '</td>';
-            $form .= '<td>' . hsc($subject) . '</td>';
-            $form .= '<td>' . nl2br($message) . '</td>';
-            $form .= '<td><a class="deletePattern" href="' . $link . '">' . $this->getLang('assign_del') . '</a></td>';
-            $form .= '</tr>';
+                $form .= '<tr>';
+                $form .= '<td>' . hsc($pattern) . '</td>';
+                $form .= '<td>' . hsc($user) . '</td>';
+                $form .= '<td>' . hsc($subject) . '</td>';
+                $form .= '<td>' . nl2br($message) . '</td>';
+                $form .= '<td><a class="deletePattern" href="' . $link . '">' . $this->getLang('assign_del') . '</a></td>';
+                $form .= '</tr>';
+            }
         }
 
         // new assignment form

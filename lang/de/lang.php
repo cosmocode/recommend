@@ -24,6 +24,9 @@ $lang['err_captcha'] = 'Captcha Eingabe ist nicht korrekt';
 
 $lang['headline_snippets'] = 'Standardwerte';
 $lang['headline_logs'] = 'Logs';
+$lang['no_logs'] = 'Keine Empfehlungen.';
+$lang['no_entries'] = 'Keine Empfehlungen in %s.';
+$lang['status_entries'] = 'In %s wurden folgende %s Empfehlungen verschickt:';
 $lang['assign_add'] = 'Hinzufügen';
 $lang['assign_del'] = 'Löschen';
 $lang['assign_pattern'] = 'Seite/Namensraum';

@@ -6,6 +6,7 @@ class helper_plugin_recommend_assignment
 
     public static function getAssignments()
     {
+        if (!is_file(self::$confFile)) return [];
         return @jsonToArray(self::$confFile);
     }
 

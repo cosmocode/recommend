@@ -24,6 +24,9 @@ $lang['err_captcha'] = 'Invalid captcha';
 
 $lang['headline_snippets'] = 'Defaults';
 $lang['headline_logs'] = 'Logs';
+$lang['no_logs'] = 'No recommendations yet.';
+$lang['no_entries'] = 'No recommendations were made in %s.';
+$lang['status_entries'] = 'In %s your users made the following %s recommendations:';
 $lang['assign_add'] = 'Add';
 $lang['assign_del'] = 'Delete';
 $lang['assign_pattern'] = 'Namespace';
