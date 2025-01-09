@@ -1,7 +1,7 @@
 base    recommend
 author  Adrian Lang, Andreas Gohr, Anna Dabrowska
 email   dokuwiki@cosmocode.de
-date    2023-05-23
+date    2025-01-09
 name    recommend
 desc    Allows to recommend a page via email
 url     http://www.dokuwiki.org/plugin:recommend
