@@ -29,10 +29,8 @@ const recommend = {
         // returns null
         let id = url.searchParams.get('id');
         if ( id === null ) {
-            // Convert url to string an get the last part without
-            // any parameters from actions and the like
-            url = String(url);
-            id = url.split('/').pop().split('?')[0];
+            //get full path component to pass full path for later namespace convert
+            id = url.pathname;
         }
 
         recommend.$dialog = jQuery('<div></div>');

@@ -128,7 +128,7 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
     {
         global $INPUT;
 
-        $id = getID(); // we may run in AJAX context
+        $id = cleanID(getID()); // we may run in AJAX context, pathcomponent must be converted to pure namespace
         if ($id === '') throw new \RuntimeException('No ID given');
 
         $form = new \dokuwiki\Form\Form([
@@ -213,16 +213,23 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
             throw new \Exception($this->getLang('err_sendername'));
         }
         $s_name = $_POST['s_name'];
-        $sender = $s_name . ' <' . $_POST['s_email'] . '>';
+
+        global $conf;
+
+        if (!$this->getConf('usewikimail')) {
+          $sender = $s_name . ' <' . $_POST['s_email'] . '>';
+        }
+        if ($this->getConf('usewikimail')) {
+          $sender = $conf['title'] . ' <' . $conf['mailfrom'] . '>';
+        }
 
         $id = $INPUT->filter('cleanID')->str('id');
         if ($id === '' || !page_exists($id)) throw new \Exception($this->getLang('err_page'));
 
         $comment = $INPUT->str('comment');
 
-        global $conf;
         $replacements = [
-            'PAGE' => $id,
+            'PAGE' => noNS($id),
             'SITE' => $conf['title'],
             'URL'  => wl($id, '', true),
             'COMMENT' => $comment,
