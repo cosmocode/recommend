@@ -1,11 +1,12 @@
 <?php
 
+use dokuwiki\Extension\Plugin;
 use dokuwiki\Extension\AuthPlugin;
 
 /**
  * Mail helper
  */
-class helper_plugin_recommend_mail extends DokuWiki_Plugin
+class helper_plugin_recommend_mail extends Plugin
 {
     /**
      * @param string $recipient
@@ -52,7 +53,7 @@ class helper_plugin_recommend_mail extends DokuWiki_Plugin
 
             if ($recipient[0] === '@') {
                 $this->resolveGroup($resolved, $recipient);
-            } elseif (strpos($recipient, '@') === false) {
+            } elseif (!str_contains($recipient, '@')) {
                 $this->resolveUser($resolved, $recipient);
             } else {
                 if (!$this->emailIsValid($recipient)) {
@@ -107,7 +108,7 @@ class helper_plugin_recommend_mail extends DokuWiki_Plugin
      */
     protected function emailIsValid($mail)
     {
-        if(!$this->getConf('wikionly')) return mail_isvalid($mail);
+        if (!$this->getConf('wikionly')) return mail_isvalid($mail);
 
         /** @var AuthPlugin $auth */
         global $auth;

@@ -1,2 +1,3 @@
 <?php
+
 $conf['wikionly'] = true;

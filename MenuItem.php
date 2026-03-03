@@ -2,11 +2,12 @@
 
 namespace dokuwiki\plugin\recommend;
 
+use dokuwiki\Menu\Item\AbstractItem;
 
 /**
  * Menu Item
  */
-class MenuItem extends \dokuwiki\Menu\Item\AbstractItem
+class MenuItem extends AbstractItem
 {
     /** @inheritdoc */
     public function getType()
@@ -25,7 +26,8 @@ class MenuItem extends \dokuwiki\Menu\Item\AbstractItem
      *
      * @return string
      */
-    public function getLabel() {
+    public function getLabel()
+    {
         $hlp = plugin_load('action', 'recommend');
         return $hlp->getLang('menu_recommend');
     }

@@ -1,15 +1,20 @@
 <?php
 
-class admin_plugin_recommend extends DokuWiki_Admin_Plugin {
+use dokuwiki\Extension\AdminPlugin;
 
+class admin_plugin_recommend extends AdminPlugin
+{
     protected $entries;
     protected $logs;
     protected $month;
     protected $assignments;
 
-    public function handle() {
-        if (isset($_REQUEST['rec_month']) &&
-            preg_match('/^\d{4}-\d{2}$/', $_REQUEST['rec_month'])) {
+    public function handle()
+    {
+        if (
+            isset($_REQUEST['rec_month']) &&
+            preg_match('/^\d{4}-\d{2}$/', $_REQUEST['rec_month'])
+        ) {
             $this->month = $_REQUEST['rec_month'];
         } else {
             $this->month = date('Y-m');
@@ -28,39 +33,40 @@ class admin_plugin_recommend extends DokuWiki_Admin_Plugin {
 
         if ($INPUT->str('action') && $INPUT->arr('assignment') && checkSecurityToken()) {
             $assignment = $INPUT->arr('assignment');
-                if ($INPUT->str('action') === 'delete') {
-                    $ok = $assignmentsHelper->removeAssignment($assignment);
-                    if (!$ok) {
-                        msg('failed to remove pattern', -1);
-                    }
-                } elseif ($INPUT->str('action') === 'add') {
-                    if ($assignment['pattern'][0] == '/') {
-                        if (@preg_match($assignment['pattern'], null) === false) {
-                            msg('Invalid regular expression. Pattern not saved', -1);
-                        } else {
-                            $ok = $assignmentsHelper->addAssignment($assignment);
-                            if (!$ok) {
-                                msg('failed to add pattern', -1);
-                            }
-                        }
+            if ($INPUT->str('action') === 'delete') {
+                $ok = $assignmentsHelper->removeAssignment($assignment);
+                if (!$ok) {
+                    msg('failed to remove pattern', -1);
+                }
+            } elseif ($INPUT->str('action') === 'add') {
+                if ($assignment['pattern'][0] == '/') {
+                    if (@preg_match($assignment['pattern'], null) === false) {
+                        msg('Invalid regular expression. Pattern not saved', -1);
                     } else {
                         $ok = $assignmentsHelper->addAssignment($assignment);
                         if (!$ok) {
                             msg('failed to add pattern', -1);
                         }
                     }
-
+                } else {
+                    $ok = $assignmentsHelper->addAssignment($assignment);
+                    if (!$ok) {
+                        msg('failed to add pattern', -1);
+                    }
+                }
             }
 
-            send_redirect(wl($ID, array('do' => 'admin', 'page' => 'recommend'), true, '&'));
+            send_redirect(wl($ID, ['do' => 'admin', 'page' => 'recommend'], true, '&'));
         }
     }
 
-    public function getTOC() {
+    public function getTOC()
+    {
         return array_map([$this, 'recommendMakeTOC'], $this->logs);
     }
 
-    public function html() {
+    public function html()
+    {
         echo $this->locale_xhtml('intro');
 
         echo '<h2>' . $this->getLang('headline_snippets') . '</h2>';
@@ -135,7 +141,8 @@ class admin_plugin_recommend extends DokuWiki_Admin_Plugin {
                 $form .= '<td>' . hsc($user) . '</td>';
                 $form .= '<td>' . hsc($subject) . '</td>';
                 $form .= '<td>' . nl2br($message) . '</td>';
-                $form .= '<td><a class="deletePattern" href="' . $link . '">' . $this->getLang('assign_del') . '</a></td>';
+                $form .= '<td><a class="deletePattern" href="' .
+                    $link . '">' . $this->getLang('assign_del') . '</a></td>';
                 $form .= '</tr>';
             }
         }
@@ -146,7 +153,8 @@ class admin_plugin_recommend extends DokuWiki_Admin_Plugin {
         $form .= '<td><input type="text" name="assignment[user]" /></td>';
         $form .= '<td><input type="text" name="assignment[subject]" /></td>';
         $form .= '<td><textarea cols="30" rows="4" name="assignment[message]"></textarea></td>';
-        $form .= '<td><button type="submit" name="action" value="add">' . $this->getLang('assign_add') . '</button></td>';
+        $form .= '<td><button type="submit" name="action" value="add">' .
+            $this->getLang('assign_add') . '</button></td>';
         $form .= '</tr>';
 
         $form .= '</table>';
@@ -155,7 +163,8 @@ class admin_plugin_recommend extends DokuWiki_Admin_Plugin {
         return $form;
     }
 
-    protected function recommendMakeTOC($month) {
+    protected function recommendMakeTOC($month)
+    {
         global $ID;
         return html_mktocitem('?do=admin&page=recommend&id=' . $ID . '&rec_month=' . $month, $month, 2, '');
     }

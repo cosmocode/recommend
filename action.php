@@ -1,10 +1,17 @@
 <?php
 
-class action_plugin_recommend extends DokuWiki_Action_Plugin {
+use dokuwiki\Extension\ActionPlugin;
+use dokuwiki\Extension\EventHandler;
+use dokuwiki\Extension\Event;
+use dokuwiki\plugin\recommend\MenuItem;
+use dokuwiki\Form\Form;
+use dokuwiki\Utf8\PhpString;
 
-    public function register(Doku_Event_Handler $controller) {
-        foreach (array('ACTION_ACT_PREPROCESS', 'AJAX_CALL_UNKNOWN',
-                       'TPL_ACT_UNKNOWN') as $event) {
+class action_plugin_recommend extends ActionPlugin
+{
+    public function register(EventHandler $controller)
+    {
+        foreach (['ACTION_ACT_PREPROCESS', 'AJAX_CALL_UNKNOWN', 'TPL_ACT_UNKNOWN'] as $event) {
             $controller->register_hook($event, 'BEFORE', $this, 'handle');
         }
         $controller->register_hook('MENU_ITEMS_ASSEMBLY', 'AFTER', $this, 'handleMenu');
@@ -14,11 +21,12 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
     /**
      * Main processing
      *
-     * @param Doku_Event $event
+     * @param Event $event
      * @return void
      */
-    public function handle(Doku_Event $event) {
-        if ($event->data !=='recommend') {
+    public function handle(Event $event)
+    {
+        if ($event->data !== 'recommend') {
             return;
         }
 
@@ -55,29 +63,28 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
     /**
      * Page menu item
      *
-     * @param Doku_Event $event
+     * @param Event $event
      * @return void
      */
-    public function handleMenu(Doku_Event $event)
+    public function handleMenu(Event $event)
     {
         if ($event->data['view'] !== 'page') return;
         // menu item is only for logged in users
         if (empty($_SERVER['REMOTE_USER'])) return;
 
-        array_splice($event->data['items'], -1, 0, [new \dokuwiki\plugin\recommend\MenuItem()]);
+        array_splice($event->data['items'], -1, 0, [new MenuItem()]);
     }
 
     /**
      * Autocomplete
-     * @param Doku_Event $event
+     * @param Event $event
      * @throws Exception
      * @author Andreas Gohr
-     *
      */
-    public function autocomplete(Doku_Event $event)
+    public function autocomplete(Event $event)
     {
 
-        if ($event->data !=='plugin_recommend_ac') {
+        if ($event->data !== 'plugin_recommend_ac') {
             return;
         }
 
@@ -96,7 +103,7 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
 
         // check minimum length
         $lookup = trim($INPUT->str('search'));
-        if (utf8_strlen($lookup) < 3) {
+        if (PhpString::strlen($lookup) < 3) {
             echo json_encode([]);
             return;
         }
@@ -131,7 +138,7 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
         $id = getID(); // we may run in AJAX context
         if ($id === '') throw new \RuntimeException('No ID given');
 
-        $form = new \dokuwiki\Form\Form([
+        $form = new Form([
             'action' => wl($id, ['do' => 'recommend'], false, '&'),
             'id' => 'plugin__recommend',
         ]);
@@ -191,7 +198,7 @@ class action_plugin_recommend extends DokuWiki_Action_Plugin {
 
         // Captcha plugin
         $captcha = null;
-        if (@is_dir(DOKU_PLUGIN . 'captcha')) $captcha = plugin_load('helper','captcha');
+        if (@is_dir(DOKU_PLUGIN . 'captcha')) $captcha = plugin_load('helper', 'captcha');
         if (!is_null($captcha) && $captcha->isEnabled() && !$captcha->check()) {
             throw new \Exception($this->getLang('err_captcha'));
         }
