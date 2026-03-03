@@ -46,7 +46,7 @@ class helper_plugin_recommend_mail extends Plugin
     {
         $resolved = [];
 
-        $recipients = explode(',', $recipients);
+        $recipients = explode(',', trim($recipients," ,"));
 
         foreach ($recipients as $recipient) {
             $recipient = trim($recipient);
